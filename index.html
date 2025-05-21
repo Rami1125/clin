@@ -1,0 +1,2685 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הזמנת מכולה- צ'אטבוט לפינוי פסולת בניין</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <style>
+        :root {
+            --primary: #2e8b57; /* ירוק כהה - צבע אקולוגי */
+            --primary-dark: #1a5e3a;
+            --accent: #f39c12; /* כתום - צבע מיחזור */
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --gray: #6c757d;
+            --chat-bg: #e5ddd5;
+            --bot-bubble: #ffffff;
+            --user-bubble: #dcf8c6;
+            --placement-color: #4CAF50; /* ירוק להצבה */
+            --replacement-color: #FFC107; /* צהוב להחלפה */
+            --removal-color: #F44336; /* אדום להוצאה */
+            --new-order-color: #9C27B0; /* סגול להזמנה חדשה */
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            color: var(--dark);
+            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+            animation: gradientBG 15s ease infinite;
+            background-size: 400% 400%;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--chat-bg);
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+            position: relative;
+        }
+        
+        .chat-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+        
+        .chat-header .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .chat-header .logo img {
+            height: 26px;
+            margin-left: 10px;
+        }
+        
+        .chat-header .status {
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+        
+        .chat-header .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4caf50;
+            border-radius: 50%;
+            margin-left: 5px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 15px 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scroll-behavior: smooth;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.1);
+            line-height: 1.5;
+            font-size: 0.95rem;
+            word-break: break-word;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background-color: var(--bot-bubble);
+            color: var(--dark);
+            border-bottom-left-radius: 4px;
+            margin-right: 30px;
+            animation: botMessageIn 0.5s ease-out;
+        }
+        
+        @keyframes botMessageIn {
+            0% { opacity: 0; transform: translateY(10px) scale(0.9); }
+            70% { opacity: 1; transform: translateY(-2px) scale(1.01); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--user-bubble);
+            color: var(--dark);
+            border-bottom-right-radius: 4px;
+            margin-left: 30px;
+            animation: userMessageIn 0.5s ease-out;
+        }
+        
+        @keyframes userMessageIn {
+            0% { opacity: 0; transform: translateX(10px); }
+            70% { opacity: 1; transform: translateX(-2px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        
+        .info-message {
+            align-self: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: var(--gray);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            margin: 5px 0;
+            max-width: 70%;
+        }
+        
+        .calculation-message {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 5px 0;
+            max-width: 90%;
+        }
+        
+        .calculation-message h4 {
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        .calculation-result {
+            font-weight: bold;
+            color: var(--success);
+            margin-top: 8px;
+            font-size: 1rem;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            padding: 10px;
+            background-color: #f0f2f5;
+            border-top: 1px solid #e0e0e0;
+            position: relative;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 21px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background-color: white;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            min-height: 42px;
+            max-height: 120px;
+            resize: none;
+            overflow-y: auto;
+        }
+        
+        .chat-input:focus {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        
+        .send-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            margin-right: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .send-button:hover {
+            background-color: var(--primary-dark);
+            transform: scale(1.05);
+        }
+        
+        .send-button:active {
+            transform: scale(0.95);
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px;
+            background-color: #f0f2f5;
+            border-top: 1px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        
+        .quick-action {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .quick-action:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background-color: var(--primary);
+            transition: all 0.3s;
+            z-index: -1;
+            border-radius: 20px;
+        }
+        
+        .quick-action:hover {
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .quick-action:hover:before {
+            width: 100%;
+        }
+        
+        .quick-action.placement-action {
+            border-color: var(--placement-color);
+        }
+        
+        .quick-action.placement-action:before {
+            background-color: var(--placement-color);
+        }
+        
+        .quick-action.replacement-action {
+            border-color: var(--replacement-color);
+        }
+        
+        .quick-action.replacement-action:before {
+            background-color: var(--replacement-color);
+        }
+        
+        .quick-action.removal-action {
+            border-color: var(--removal-color);
+        }
+        
+        .quick-action.removal-action:before {
+            background-color: var(--removal-color);
+        }
+        
+        .quick-action.new-order-action {
+            border-color: var(--new-order-color);
+            animation: pulsePurple 2s infinite;
+        }
+        
+        .quick-action.new-order-action:before {
+            background-color: var(--new-order-color);
+        }
+        
+        @keyframes pulsePurple {
+            0% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(156, 39, 176, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0); }
+        }
+        
+        .order-form {
+            display: none;
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+            animation: slideUp 0.3s ease-out;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+        
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, 
+        .form-group textarea:focus, 
+        .form-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(46, 139, 87, 0.2);
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: var(--gray);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: rgba(46, 139, 87, 0.1);
+        }
+        
+        .material-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .material-table th, .material-table td {
+            padding: 10px 12px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .material-table th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 500;
+        }
+        
+        .material-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .material-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .branches {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .branch-card {
+            flex: 1;
+            min-width: 250px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .branch-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            background-color: rgba(46, 139, 87, 0.05);
+            transition: all 0.4s ease;
+            z-index: -1;
+        }
+        
+        .branch-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .branch-card:hover:before {
+            height: 100%;
+        }
+        
+        .branch-card.placement-card {
+            border-right: 4px solid var(--placement-color);
+        }
+        
+        .branch-card.replacement-card {
+            border-right: 4px solid var(--replacement-color);
+        }
+        
+        .branch-card.removal-card {
+            border-right: 4px solid var(--removal-color);
+        }
+        
+        .rental-info {
+            position: relative;
+            width: 100%;
+        }
+        
+        .rental-popup {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 100%;
+            background-color: #fff9e6;
+            border: 1px solid #ffd700;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 5px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            animation: popupFadeIn 0.3s ease-out;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        @keyframes popupFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .rental-popup i {
+            color: #ffd700;
+            margin-left: 5px;
+        }
+        
+        .rental-popup strong {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .branch-card h4 {
+            color: var(--primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+        }
+        
+        .branch-card h4 i {
+            margin-left: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .branch-card p {
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .branch-card .phone {
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        
+        .motivation-message {
+            background-color: #fff8e1;
+            border-left: 4px solid var(--warning);
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            max-width: 90%;
+        }
+        
+        .joke-message {
+            background-color: #e8f5e9;
+            border-left: 4px solid var(--success);
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 0 8px 8px 0;
+            max-width: 90%;
+        }
+        
+        .joke-message .punchline {
+            font-weight: bold;
+            margin-top: 8px;
+            color: var(--success);
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 10px 14px;
+            align-self: flex-start;
+            background-color: var(--bot-bubble);
+            border-radius: 18px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #aaa;
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        .whatsapp-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #25D366;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 10px;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .whatsapp-button:hover {
+            background-color: #128C7E;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .whatsapp-button i {
+            margin-left: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .order-summary {
+            background-color: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+        }
+        
+        .order-summary h4 {
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-item .label {
+            font-weight: 500;
+            color: var(--gray);
+        }
+        
+        .order-item .value {
+            color: var(--dark);
+            text-align: left;
+            margin-right: 10px;
+        }
+        
+        .order-total {
+            font-weight: bold;
+            margin-top: 8px;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .user-name.female::after {
+            content: " 👩";
+        }
+        
+        .user-name.male::after {
+            content: " 👨";
+        }
+        
+        .material-search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .material-search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        
+        .material-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .material-search-result {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .material-search-result:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .quantity-input {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+        
+        .quantity-input input {
+            width: 60px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            margin-left: 8px;
+        }
+        
+        .order-items-list {
+            margin-top: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .order-item-row:last-child {
+            border-bottom: none;
+        }
+        
+        .order-item-name {
+            flex: 1;
+        }
+        
+        .order-item-quantity {
+            width: 50px;
+            text-align: center;
+        }
+        
+        .remove-item {
+            color: var(--danger);
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .phone-input-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .phone-input-container select {
+            width: 80px;
+            margin-left: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .phone-input-container input {
+            flex: 1;
+        }
+        
+        /* Animation for new message */
+        .new-message {
+            animation: highlight 1.5s ease-out;
+        }
+        
+        @keyframes highlight {
+            0% { background-color: rgba(46, 139, 87, 0.1); }
+            100% { background-color: transparent; }
+        }
+        
+        /* Emoji typing animation */
+        @keyframes emojiPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        .emoji {
+            display: inline-block;
+            animation: emojiPop 0.5s ease;
+        }
+        
+        /* Form tabs */
+        .form-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .form-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: var(--gray);
+        }
+        
+        .form-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .form-tab:hover:not(.active) {
+            color: var(--dark);
+            border-bottom-color: #ddd;
+        }
+        
+        .form-tab-content {
+            display: none;
+        }
+        
+        .form-tab-content.active {
+            display: block;
+        }
+        
+        /* Material icons */
+        .material-icon {
+            margin-left: 8px;
+            font-size: 0.9rem;
+            animation: float 2s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+            100% { transform: translateY(0); }
+        }
+        
+        /* FAQ Section */
+        .faq-container {
+            margin-top: 15px;
+        }
+        
+        .faq-item {
+            background-color: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            padding: 12px 15px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .faq-question:hover {
+            background-color: #e9ecef;
+        }
+        
+        .faq-question i {
+            transition: transform 0.3s;
+        }
+        
+        .faq-question.active i {
+            transform: rotate(180deg);
+        }
+        
+        .faq-answer {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+        }
+        
+        .faq-answer.active {
+            padding: 15px;
+            max-height: 500px;
+        }
+        
+        /* Share buttons */
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .share-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .share-button.whatsapp {
+            background-color: #25D366;
+        }
+        
+        .share-button.facebook {
+            background-color: #3b5998;
+        }
+        
+        .share-button.email {
+            background-color: #d44638;
+        }
+        
+        .share-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .share-button i {
+            margin-left: 5px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .message {
+                max-width: 90%;
+                font-size: 0.9rem;
+                padding: 8px 12px;
+            }
+            
+            .branch-card {
+                min-width: 100%;
+            }
+            
+            .chat-input {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .quick-action {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .form-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .form-tab {
+                flex: 1;
+                text-align: center;
+                padding: 8px 5px;
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            
+            .header p {
+                font-size: 0.8rem;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-recycle"></i> הזמנת מכולה - צ'אטבוט מתקדם</h1>
+        <p>הבינה המלאכותית של אקו-פינוי פסולת בניין - כאן כדי לסייע בכל שאלה!</p>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="logo">
+                <span>אקו-פינוי פסולת בניין</span>
+            </div>
+            <div class="status">
+                <span>מקוון</span>
+                <div class="status-dot"></div>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be inserted here by JavaScript -->
+        </div>
+        
+        <div class="quick-actions" id="quick-actions">
+            <div class="quick-action placement-action" onclick="sendQuickMessage('מה המחיר להצבת מכולה?')"><i class="fas fa-truck-loading"></i> מחירי הצבת מכולות</div>
+            <div class="quick-action" onclick="sendQuickMessage('אילו גדלים של מכולות יש?')"><i class="fas fa-ruler-combined"></i> גדלי מכולות</div>
+            <div class="quick-action" onclick="sendQuickMessage('מה התקנות להצבת מכולה?')"><i class="fas fa-clipboard-list"></i> תקנות הצבה</div>
+            <div class="quick-action replacement-action" onclick="sendQuickMessage('מה המחיר להחלפת מכולה?')"><i class="fas fa-exchange-alt"></i> החלפת מכולה</div>
+            <div class="quick-action removal-action" onclick="sendQuickMessage('איך מוציאים מכולה?')"><i class="fas fa-trash-restore"></i> הוצאת מכולה</div>
+            <div class="quick-action new-order-action" onclick="showOrderForm()"><i class="fas fa-shopping-cart"></i> הזמנה חדשה</div>
+        </div>
+        
+        <div class="order-form" id="order-form">
+            <h4 style="margin-bottom: 15px; color: var(--primary);">הזמנה חדשה</h4>
+            
+            <div class="form-tabs">
+                <div class="form-tab active" onclick="switchTab('customer-info')">פרטי לקוח</div>
+                <div class="form-tab" onclick="switchTab('container')">מכולה</div>
+                <div class="form-tab" onclick="switchTab('location')">מיקום</div>
+                <div class="form-tab" onclick="switchTab('services')">שירותים</div>
+            </div>
+            
+            <div id="customer-info" class="form-tab-content active">
+                <div class="form-group">
+                    <label for="order-name">שם איש קשר:</label>
+                    <input type="text" id="order-name" placeholder="הזן את שמך המלא">
+                </div>
+                
+                <div class="form-group">
+                    <label for="order-phone">טלפון:</label>
+                    <div class="phone-input-container">
+                        <input type="tel" id="order-phone" placeholder="הזן מספר טלפון">
+                        <select id="phone-prefix">
+                            <option value="972">ישראל (+972)</option>
+                            <option value="1">ארה"ב (+1)</option>
+                            <option value="44">בריטניה (+44)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="order-address">כתובת אספקה:</label>
+                    <input type="text" id="order-address" placeholder="רחוב, מס', עיר">
+                </div>
+                
+                <div class="form-group">
+                    <label for="send-to-phone">שלח העתק לטלפון:</label>
+                    <input type="tel" id="send-to-phone" placeholder="אופציונלי - מספר לקבלת העתק">
+                </div>
+            </div>
+            
+            <div id="container" class="form-tab-content">
+                <div class="form-group">
+                    <label for="container-size">גודל מכולה:</label>
+                    <select id="container-size">
+                        <option value="8">מכולה 8 קוב</option>
+                        <option value="16">מכולה 16 קוב</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="container-date">תאריך הצבה מבוקש:</label>
+                    <input type="date" id="container-date" onchange="updateRentalEndDate()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="container-duration">משך זמן משוער (ימים):</label>
+                    <div class="rental-info">
+                        <input type="number" id="container-duration" min="1" value="10" onchange="updateRentalEndDate()">
+                        <div id="rental-end-date" class="rental-popup">
+                            <i class="fas fa-info-circle"></i> <span>שכירות המכולה תסתיים בתאריך: <strong id="end-date-display"></strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="location" class="form-tab-content">
+                <div class="form-group">
+                    <label for="city-select">עיר:</label>
+                    <select id="city-select" onchange="updateCityRegulations()">
+                        <option value="">בחר עיר</option>
+                        <optgroup label="אזור המרכז והשרון">
+                            <option value="tel-aviv">תל אביב</option>
+                            <option value="herzliya">הרצליה</option>
+                            <option value="raanana">רעננה</option>
+                            <option value="kfar-saba">כפר סבא</option>
+                            <option value="netanya">נתניה</option>
+                            <option value="ramat-gan">רמת גן</option>
+                            <option value="ramat-hasharon">רמת השרון</option>
+                            <option value="petah-tikva">פתח תקווה</option>
+                            <option value="rishon">ראשון לציון</option>
+                            <option value="modiin">מודיעין</option>
+                        </optgroup>
+                        <optgroup label="אזורים נוספים">
+                            <option value="jerusalem">ירושלים</option>
+                            <option value="haifa">חיפה</option>
+                            <option value="other">אחר</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location-type">סוג מיקום:</label>
+                    <select id="location-type">
+                        <option value="private">שטח פרטי</option>
+                        <option value="public">שטח ציבורי (דורש היתר)</option>
+                        <option value="parking">חניה ציבורית (דורש היתר)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location-notes">הערות למיקום:</label>
+                    <textarea id="location-notes" placeholder="פרטים נוספים לגבי מיקום המכולה"></textarea>
+                </div>
+                
+                <div id="city-regulations" style="display: none; margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 6px; border-right: 3px solid var(--primary);">
+                    <h5 style="color: var(--primary); margin-bottom: 8px;">תקנות העירייה:</h5>
+                    <div id="regulations-content">
+                        <!-- תקנות העיר יוצגו כאן -->
+                    </div>
+                    <div id="permit-link" style="margin-top: 10px;">
+                        <!-- קישור להיתר יוצג כאן -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="services" class="form-tab-content">
+                <div class="form-group">
+                    <label>סוג שירות:</label>
+                    <div class="branches" style="margin-top: 10px;">
+                        <div class="branch-card placement-card" onclick="selectService('placement')">
+                            <h4><i class="fas fa-truck-loading material-icon"></i> הצבת מכולה</h4>
+                            <p>הצבת מכולה חדשה באתר</p>
+                            <p class="phone">1200 ₪ + מע"מ</p>
+                        </div>
+                        <div class="branch-card replacement-card" onclick="selectService('replacement')">
+                            <h4><i class="fas fa-exchange-alt material-icon"></i> החלפת מכולה</h4>
+                            <p>החלפת מכולה מלאה בריקה</p>
+                            <p class="phone">1200 ₪ + מע"מ</p>
+                        </div>
+                        <div class="branch-card removal-card" onclick="selectService('removal')">
+                            <h4><i class="fas fa-trash-restore material-icon"></i> הוצאת מכולה</h4>
+                            <p>פינוי מכולה מהאתר</p>
+                            <p class="phone">כלול במחיר ההצבה</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="service-notes">הערות נוספות:</label>
+                    <textarea id="service-notes" placeholder="הערות נוספות לגבי השירות המבוקש"></textarea>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="hideOrderForm()">ביטול</button>
+                <button class="btn btn-success" onclick="submitOrder()">שלח הזמנה</button>
+            </div>
+        </div>
+        
+        <div class="chat-input-area">
+            <textarea class="chat-input" id="user-input" placeholder="הקלד את הודעתך כאן..." rows="1" onkeypress="handleKeyPress(event)"></textarea>
+            <button class="send-button" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 3D Container Model Popup -->
+    <div id="container-model-popup" class="popup-overlay">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3><i class="fas fa-cube"></i> הדמיית מכולה תלת מימדית</h3>
+                <span class="close-popup" onclick="closeContainerModelPopup()">&times;</span>
+            </div>
+            <div class="popup-body">
+                <div class="model-container">
+                    <div id="container-model-viewer"></div>
+                    <div class="model-controls">
+                        <button id="model-8kub" class="btn btn-primary" onclick="switchContainerModel(8)">מכולה 8 קוב</button>
+                        <button id="model-16kub" class="btn btn-secondary" onclick="switchContainerModel(16)">מכולה 16 קוב</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User data
+        let userName = '';
+        let userGender = ''; // 'male' or 'female'
+        let conversationState = 'greeting'; // Tracks where we are in the conversation
+        let calculationData = {}; // Stores data during calculations
+        let orderData = {}; // Stores order information
+        let selectedService = ''; // Stores selected service type
+        
+        // City regulations database
+        const cityRegulations = {
+            'tel-aviv': {
+                title: 'תקנות הצבת מכולות בתל אביב',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'אין להציב מכולה במרחק הקטן מ-20 מטר מפתח בניין',
+                    'יש לכסות את המכולה בסוף יום העבודה',
+                    'אין להשאיר מכולה ברחוב מעל 10 ימים ללא אישור מיוחד'
+                ],
+                permitLink: 'https://www.tel-aviv.gov.il/Forms'
+            },
+            'herzliya': {
+                title: 'תקנות הצבת מכולות בהרצליה',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש לוודא שהמכולה אינה חוסמת גישה לחניות או מדרכות'
+                ],
+                permitLink: 'https://www.herzliya.muni.il'
+            },
+            'raanana': {
+                title: 'תקנות הצבת מכולות ברעננה',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש לכסות את המכולה בסוף יום העבודה למניעת מפגעים'
+                ],
+                permitLink: 'https://www.raanana.muni.il'
+            },
+            'kfar-saba': {
+                title: 'תקנות הצבת מכולות בכפר סבא',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש להקפיד על ניקיון סביבת המכולה'
+                ],
+                permitLink: 'https://www.kfar-saba.muni.il'
+            },
+            'netanya': {
+                title: 'תקנות הצבת מכולות בנתניה',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 10 ימים ללא אישור מיוחד',
+                    'יש לוודא שהמכולה אינה מוצבת באזורי חוף או תיירות'
+                ],
+                permitLink: 'https://www.netanya.muni.il'
+            },
+            'ramat-gan': {
+                title: 'תקנות הצבת מכולות ברמת גן',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש לכסות את המכולה בסוף יום העבודה'
+                ],
+                permitLink: 'https://www.ramat-gan.muni.il'
+            },
+            'ramat-hasharon': {
+                title: 'תקנות הצבת מכולות ברמת השרון',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש להקפיד על ניקיון סביבת המכולה'
+                ],
+                permitLink: 'https://www.ramat-hasharon.muni.il'
+            },
+            'modiin': {
+                title: 'תקנות הצבת מכולות במודיעין',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש לוודא שהמכולה אינה חוסמת גישה לחניות או מדרכות'
+                ],
+                permitLink: 'https://www.modiin.muni.il'
+            },
+            'jerusalem': {
+                title: 'תקנות הצבת מכולות בירושלים',
+                regulations: [
+                    'יש לדווח לאגף אכיפה ושיטור עירוני לפני הצבת המכולה',
+                    'במקומות של חניה מוסדרת/תו אזורי נדרש אישור מיוחד',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש לכסות את המכולה בסוף יום העבודה'
+                ],
+                permitLink: 'https://www.jerusalem.muni.il'
+            },
+            'haifa': {
+                title: 'תקנות הצבת מכולות בחיפה',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 10 ימים ללא אישור מיוחד',
+                    'יש להקפיד על ניקיון סביבת המכולה'
+                ],
+                permitLink: 'https://www.haifa.muni.il'
+            },
+            'rishon': {
+                title: 'תקנות הצבת מכולות בראשון לציון',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 7 ימים ללא אישור מיוחד',
+                    'יש לכסות את המכולה בסוף יום העבודה'
+                ],
+                permitLink: 'https://www.rishonlezion.muni.il'
+            },
+            'petah-tikva': {
+                title: 'תקנות הצבת מכולות בפתח תקווה',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהעירייה להצבת מכולה בשטח ציבורי',
+                    'אין להשאיר מכולה ברחוב מעל 5 ימים ללא אישור מיוחד',
+                    'יש להקפיד על ניקיון סביבת המכולה'
+                ],
+                permitLink: 'https://www.petah-tikva.muni.il'
+            },
+            'other': {
+                title: 'תקנות כלליות להצבת מכולות',
+                regulations: [
+                    'יש להציב את המכולה במקום שאינו מפריע לתנועה',
+                    'יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה',
+                    'יש לקבל אישור מהרשות המקומית להצבת מכולה בשטח ציבורי',
+                    'יש לוודא שהמכולה אינה חוסמת גישה לחניות, מדרכות או כניסות לבניינים',
+                    'אין להשאיר מכולה ברחוב מעל 10 ימים ללא אישור מיוחד'
+                ],
+                permitLink: 'https://www.gov.il'
+            }
+        };
+        
+        // Container information
+        const containerInfo = {
+            '8': {
+                size: '8 קוב',
+                dimensions: '3.8 מטר אורך, 1.8 מטר רוחב, 1.2 מטר גובה',
+                suitable: 'מתאים לשיפוצים קטנים עד בינוניים, פינוי פסולת בניין מדירה',
+                price: '1200 ₪ + מע"מ'
+            },
+            '16': {
+                size: '16 קוב',
+                dimensions: '4.8 מטר אורך, 2.2 מטר רוחב, 1.5 מטר גובה',
+                suitable: 'מתאים לשיפוצים גדולים, פרויקטי בנייה, הריסות',
+                price: '1200 ₪ + מע"מ'
+            }
+        };
+        
+        // Branches information
+        const branches = [
+            {
+                name: 'סניף מרכז',
+                address: 'רח\' המלאכה 8, תל אביב',
+                phone: '03-1234567',
+                hours: 'א-ה 07:00-17:00, ו 07:00-13:00'
+            },
+            {
+                name: 'סניף צפון',
+                address: 'רח\' החרושת 12, חיפה',
+                phone: '04-7654321',
+                hours: 'א-ה 07:00-17:00, ו 07:00-13:00'
+            },
+            {
+                name: 'מוקד הזמנות ארצי',
+                address: 'שירות טלפוני',
+                phone: '1-800-123-456',
+                hours: 'א-ה 07:00-19:00, ו 07:00-13:00'
+            }
+        ];
+        
+        // Motivational phrases with emojis
+        const motivationalPhrases = [
+            {text: "פינוי פסולת בניין באופן מסודר תורם לסביבה ולקהילה! 🌱", emoji: "🌱"},
+            {text: "כל מכולה שמפונה כראוי - עוד צעד לעתיד ירוק יותר! 🌍", emoji: "🌍"},
+            {text: "מיחזור פסולת בניין חוסך משאבים יקרים לכדור הארץ! ♻️", emoji: "♻️"},
+            {text: "הזמן הכי טוב לפנות פסולת בניין הוא עכשיו! ⏱️", emoji: "⏱️"},
+            {text: "פינוי פסולת בניין באופן חוקי מונע קנסות ושומר על הסביבה! 👍", emoji: "👍"},
+            {text: "ח.סבן מחלקת מכולות - הפתרון המקצועי לפינוי פסולת בניין! 🏗️", emoji: "🏗️"},
+            {text: "פריסה ארצית של נהגים מקצועיים לשירות מהיר ויעיל! 🚚", emoji: "🚚"},
+            {text: "אנחנו מטמינים באתרים מורשים בלבד על ידי המשרד לאיכות הסביבה! 📝", emoji: "📝"},
+            {text: "שירות מתקדם ומהיר עם צי משאיות חדיש ומכולות איכותיות! 🔄", emoji: "🔄"},
+            {text: "בחירה נכונה של מכולה חוסכת זמן וכסף! 💰", emoji: "💰"}
+        ];
+        
+        // Jokes
+        const jokes = [
+            {
+                setup: "למה פסולת בניין תמיד מרגישה בודדה? 🏗️",
+                punchline: "כי אף אחד לא רוצה להיות איתה בקשר! 😅"
+            },
+            {
+                setup: "מה אמרה מכולת הפסולת למשאית? 🚚",
+                punchline: "אתה תמיד מרים אותי כשאני למטה! 💪"
+            },
+            {
+                setup: "איך קוראים לאדם שאוסף פסולת בניין? 🧱",
+                punchline: "אספן מיוחד במינו! ♻️"
+            }
+        ];
+        
+        // FAQ Database
+        const faqDatabase = [
+            {
+                question: "מה המחיר להצבת מכולה?",
+                answer: "מחיר הצבת מכולה או החלפת מכולה הוא 1200 ₪ + מע\"מ. המחיר זהה עבור מכולות בגודל 8 קוב ו-16 קוב."
+            },
+            {
+                question: "אילו גדלים של מכולות יש?",
+                answer: "אנחנו מציעים שני גדלים של מכולות: מכולה 8 קוב (3.8 מטר אורך, 1.8 מטר רוחב, 1.2 מטר גובה) המתאימה לשיפוצים קטנים עד בינוניים, ומכולה 16 קוב (4.8 מטר אורך, 2.2 מטר רוחב, 1.5 מטר גובה) המתאימה לשיפוצים גדולים ופרויקטי בנייה."
+            },
+            {
+                question: "מה התקנות להצבת מכולה?",
+                answer: "הצבת מכולות פסולת בניין כפופה לתקנות עירוניות שונות. באופן כללי, יש להציב את המכולה במקום שאינו מפריע לתנועה, לסמן אותה במחזירי אור בשעות החשיכה, ואין להציב במרחק הקטן מ-20 מטר מפתח בניין. הצבת מכולה בשטח ציבורי דורשת היתר מהעירייה."
+            },
+            {
+                question: "כמה זמן אפשר להשאיר מכולה?",
+                answer: "משך השימוש הסטנדרטי הוא עד 10 ימים, אך זה תלוי בתקנות העירייה המקומית. בערים מסוימות התקופה המקסימלית ללא היתר מיוחד היא 7 ימים בלבד."
+            },
+            {
+                question: "האם אתם מספקים אישורי הטמנה?",
+                answer: "כן, אנחנו מטמינים פסולת בניין באתרים מורשים בלבד על ידי המשרד לאיכות הסביבה, ומספקים אישורי הטמנה (טופס 4) לפי דרישה."
+            }
+        ];
+        
+        // Initialize chat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-resize textarea
+            const textarea = document.getElementById('user-input');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Start with greeting
+            setTimeout(() => {
+                addBotMessage("שלום וברוך הבא הזמנת מכולה און ליין פסולת בניין! אני הבינה המלאכותית של החברה, כאן כדי לסייע לך בכל שאלה בנושא פינוי פסולת בניין, הצבת מכולות והיתרים. עם מי יש לי הכבוד לשוחח היום?");
+            }, 500);
+            
+            // Add some quick actions after a delay
+            setTimeout(() => {
+                addQuickActions([
+                    'מה המחיר להצבת מכולה?',
+                    'אילו גדלים של מכולות יש?',
+                    'מה התקנות להצבת מכולה?',
+                    'הזמנה חדשה'
+                ]);
+            }, 1000);
+        });
+        
+        // Switch between form tabs
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.form-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Deactivate all tab buttons
+            document.querySelectorAll('.form-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Activate selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Activate tab button
+            document.querySelectorAll('.form-tab').forEach(tab => {
+                if (tab.getAttribute('onclick').includes(tabId)) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+        
+        // Update city regulations
+        function updateCityRegulations() {
+            const citySelect = document.getElementById('city-select');
+            const cityValue = citySelect.value;
+            const cityRegulationsDiv = document.getElementById('city-regulations');
+            const regulationsContent = document.getElementById('regulations-content');
+            const permitLink = document.getElementById('permit-link');
+            
+            if (cityValue && cityRegulations[cityValue]) {
+                const cityData = cityRegulations[cityValue];
+                
+                regulationsContent.innerHTML = `
+                    <h5>${cityData.title}</h5>
+                    <ul style="padding-right: 20px; margin-top: 5px;">
+                        ${cityData.regulations.map(reg => `<li>${reg}</li>`).join('')}
+                    </ul>
+                `;
+                
+                permitLink.innerHTML = `
+                    <a href="${cityData.permitLink}" target="_blank" class="btn btn-outline" style="font-size: 0.85rem;">
+                        <i class="fas fa-file-alt"></i> טופס בקשת היתר להצבת מכולה
+                    </a>
+                `;
+                
+                cityRegulationsDiv.style.display = 'block';
+            } else {
+                cityRegulationsDiv.style.display = 'none';
+            }
+        }
+        
+        // Select service type
+        function selectService(service) {
+            selectedService = service;
+            
+            // Highlight selected service
+            document.querySelectorAll('.branch-card').forEach(card => {
+                card.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.1)';
+            });
+            
+            const serviceCards = document.querySelectorAll('.branch-card');
+            if (service === 'placement') {
+                serviceCards[0].style.boxShadow = '0 0 0 3px var(--placement-color), 0 5px 15px rgba(0, 0, 0, 0.1)';
+            } else if (service === 'replacement') {
+                serviceCards[1].style.boxShadow = '0 0 0 3px var(--replacement-color), 0 5px 15px rgba(0, 0, 0, 0.1)';
+            } else if (service === 'removal') {
+                serviceCards[2].style.boxShadow = '0 0 0 3px var(--removal-color), 0 5px 15px rgba(0, 0, 0, 0.1)';
+            }
+        }
+        
+        // Add a message from the bot with typing animation
+        function addBotMessage(text, isCalculation = false, isMotivation = false, isJoke = false, isFAQ = false) {
+            const chatMessages = document.getElementById('chat-messages');
+            
+            // Create typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
+            typingIndicator.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Remove typing indicator after delay and add message
+            setTimeout(() => {
+                chatMessages.removeChild(typingIndicator);
+                
+                const messageDiv = document.createElement('div');
+                
+                if (isCalculation) {
+                    messageDiv.className = 'message calculation-message';
+                    messageDiv.innerHTML = text;
+                } else if (isMotivation) {
+                    messageDiv.className = 'message motivation-message';
+                    // Add emoji with animation
+                    const emoji = text.emoji;
+                    const textWithoutEmoji = text.text.replace(emoji, '');
+                    messageDiv.innerHTML = `${textWithoutEmoji} <span class="emoji">${emoji}</span>`;
+                } else if (isJoke) {
+                    messageDiv.className = 'message joke-message';
+                    messageDiv.innerHTML = `
+                        <div>${text.setup}</div>
+                        <div class="punchline">${text.punchline} <span class="emoji">${text.punchline.match(/[\u{1F600}-\u{1F6FF}]/u)?.[0] || ''}</span></div>
+                    `;
+                } else if (isFAQ) {
+                    messageDiv.className = 'message';
+                    messageDiv.innerHTML = `
+                        <div class="faq-container">
+                            ${text}
+                        </div>
+                    `;
+                    
+                    // Add event listeners to FAQ items
+                    setTimeout(() => {
+                        document.querySelectorAll('.faq-question').forEach(question => {
+                            question.addEventListener('click', function() {
+                                this.classList.toggle('active');
+                                const answer = this.nextElementSibling;
+                                answer.classList.toggle('active');
+                                
+                                // Scroll to the question when opened
+                                if (this.classList.contains('active')) {
+                                    this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                }
+                            });
+                        });
+                    }, 100);
+                } else {
+                    messageDiv.className = 'message bot-message';
+                    // Highlight user name if mentioned
+                    if (userName) {
+                        const nameWithEmoji = `<span class="user-name ${userGender}">${userName}</span>`;
+                        text = text.replace(userName, nameWithEmoji);
+                    }
+                    messageDiv.innerHTML = text;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Highlight new message
+                messageDiv.classList.add('new-message');
+                setTimeout(() => {
+                    messageDiv.classList.remove('new-message');
+                }, 1500);
+            }, 1500);
+        }
+        
+        // Add a message from the user
+        function addUserMessage(text) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Highlight new message
+            messageDiv.classList.add('new-message');
+            setTimeout(() => {
+                messageDiv.classList.remove('new-message');
+            }, 1500);
+        }
+        
+        // Add quick actions buttons
+        function addQuickActions(actions) {
+            const quickActions = document.getElementById('quick-actions');
+            quickActions.innerHTML = '';
+            
+            actions.forEach(action => {
+                const actionButton = document.createElement('div');
+                
+                // Check if action is HTML or plain text
+                if (action.startsWith('<div')) {
+                    actionButton.innerHTML = action;
+                    // Get the first child (the actual button)
+                    const btn = actionButton.firstChild;
+                    btn.onclick = function() {
+                        sendQuickMessage(btn.textContent.trim());
+                    };
+                    quickActions.appendChild(btn);
+                } else {
+                    actionButton.className = 'quick-action';
+                    
+                    // Add special class based on action type
+                    if (action.includes('הצבה') || action.includes('הצבת')) {
+                        actionButton.classList.add('placement-action');
+                    } else if (action.includes('החלפה') || action.includes('החלפת')) {
+                        actionButton.classList.add('replacement-action');
+                    } else if (action.includes('הוצאה') || action.includes('הוצאת')) {
+                        actionButton.classList.add('removal-action');
+                    } else if (action.includes('הזמנה') || action.includes('חדשה')) {
+                        actionButton.classList.add('new-order-action');
+                    }
+                    
+                    actionButton.textContent = action;
+                    actionButton.onclick = function() {
+                        sendQuickMessage(action);
+                    };
+                    quickActions.appendChild(actionButton);
+                }
+            });
+        }
+        
+        // Send a quick message (from button click)
+        function sendQuickMessage(text) {
+            addUserMessage(text);
+            processUserInput(text);
+        }
+        
+        // Send a message (from input field)
+        function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const text = userInput.value.trim();
+            
+            if (text) {
+                addUserMessage(text);
+                userInput.value = '';
+                userInput.style.height = 'auto';
+                processUserInput(text);
+            }
+        }
+        
+        // Handle Enter key press (Shift+Enter for new line)
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        // Process user input and generate response
+        function processUserInput(text) {
+            // Check if we're in the middle of a conversation
+            if (conversationState === 'greeting') {
+                userName = text;
+                // Simple gender detection (could be improved)
+                if (text.endsWith('ה') || text.endsWith('ת') || text.endsWith('א')) {
+                    userGender = 'female';
+                } else {
+                    userGender = 'male';
+                }
+                
+                const greeting = userGender === 'female' ? 
+                    `איזה כיף להכיר אותך ${userName}! איך אני יכולה לעזור לך היום בנושא פינוי פסולת בניין?` :
+                    `איזה כיף להכיר אותך ${userName}! איך אני יכול לעזור לך היום בנושא פינוי פסולת בניין?`;
+                
+                addBotMessage(greeting);
+                conversationState = 'normal';
+                
+                // Add a motivational phrase
+                setTimeout(() => {
+                    const randomMotivation = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
+                    addBotMessage(randomMotivation, false, true);
+                }, 2000);
+                
+                return;
+            }
+            
+            // Normal conversation processing
+            // Convert to lowercase and remove spaces for better matching
+            const normalizedText = text.toLowerCase().replace(/\s+/g, '');
+            
+            // Check for keywords (at least 2 characters)
+            if (normalizedText.length >= 2) {
+                // Check for price
+                if (normalizedText.includes('מחיר') || normalizedText.includes('עלות') || 
+                    normalizedText.includes('כמה') || normalizedText.includes('תשלום') || 
+                    normalizedText.includes('תעריף') || normalizedText.includes('שקל')) {
+                    handlePriceQuestion();
+                    return;
+                }
+                
+                // Check for size
+                if (normalizedText.includes('גודל') || normalizedText.includes('גדל') || 
+                    normalizedText.includes('מידות') || normalizedText.includes('קוב') || 
+                    normalizedText.includes('נפח') || normalizedText.includes('ממדים')) {
+                    handleSizeQuestion();
+                    return;
+                }
+                
+                // Check for regulations
+                if (normalizedText.includes('תקנות') || normalizedText.includes('חוק') || 
+                    normalizedText.includes('היתר') || normalizedText.includes('אישור') || 
+                    normalizedText.includes('עירייה') || normalizedText.includes('רישיון')) {
+                    handleRegulationsQuestion();
+                    return;
+                }
+                
+                // Check for order
+                if (normalizedText.includes('הזמנה') || normalizedText.includes('להזמין') || 
+                    normalizedText.includes('לרכוש') || normalizedText.includes('לקנות') || 
+                    normalizedText.includes('טופס') || normalizedText.includes('רכישה')) {
+                    handleOrderRequest();
+                    return;
+                }
+                
+                // Check for branches
+                if (normalizedText.includes('סניף') || normalizedText.includes('סניפים') || 
+                    normalizedText.includes('מיקום') || normalizedText.includes('כתובת') || 
+                    normalizedText.includes('איפה') || normalizedText.includes('טלפון')) {
+                    showBranches();
+                    return;
+                }
+                
+                // Check for joke
+                if (normalizedText.includes('בדיחה') || normalizedText.includes('מצחיק') || 
+                    normalizedText.includes('לצחוק') || normalizedText.includes('הומור')) {
+                    tellJoke();
+                    return;
+                }
+                
+                // Check for disposal certification
+                if (normalizedText.includes('אישור') || normalizedText.includes('הטמנה') || 
+                    normalizedText.includes('תעודה') || normalizedText.includes('טופס4') || 
+                    normalizedText.includes('אכלוס') || normalizedText.includes('מסמך')) {
+                    handleDisposalCertificationQuestion();
+                    return;
+                }
+                
+                // Check for thanks
+                if (normalizedText.includes('תודה') || normalizedText.includes('תודהרבה') || 
+                    normalizedText.includes('מעריך') || normalizedText.includes('מודה')) {
+                    addBotMessage(userGender === 'female' ? 
+                        `בכיף ${userName}! תמיד כאן בשבילך. יש עוד משהו שאת צריכה?` :
+                        `בכיף ${userName}! תמיד כאן בשבילך. יש עוד משהו שאתה צריך?`);
+                    return;
+                }
+                
+                // Check for container placement
+                if ((normalizedText.includes('מכולה') || normalizedText.includes('פסולת')) && 
+                    (normalizedText.includes('הצבה') || normalizedText.includes('להציב') || 
+                     normalizedText.includes('שים') || normalizedText.includes('לשים'))) {
+                    handleContainerPlacementQuestion();
+                    return;
+                }
+                
+                // Check for container replacement
+                if ((normalizedText.includes('מכולה') || normalizedText.includes('פסולת')) && 
+                    (normalizedText.includes('החלפה') || normalizedText.includes('להחליף') || 
+                     normalizedText.includes('חדשה') || normalizedText.includes('מלאה'))) {
+                    handleContainerReplacementQuestion();
+                    return;
+                }
+                
+                // Check for container removal
+                if ((normalizedText.includes('מכולה') || normalizedText.includes('פסולת')) && 
+                    (normalizedText.includes('הוצאה') || normalizedText.includes('להוציא') || 
+                     normalizedText.includes('פינוי') || normalizedText.includes('לפנות'))) {
+                    handleContainerRemovalQuestion();
+                    return;
+                }
+                
+                // Check for 3D view
+                if (normalizedText.includes('3d') || normalizedText.includes('תלתמימד') || 
+                    normalizedText.includes('מודל') || normalizedText.includes('הדמיה') || 
+                    normalizedText.includes('תמונה')) {
+                    showContainerModel();
+                    return;
+                }
+                
+                // Check for FAQ
+                if (normalizedText.includes('שאלות') || normalizedText.includes('תשובות') || 
+                    normalizedText.includes('נפוצות') || normalizedText.includes('שאלה')) {
+                    showFAQ();
+                    return;
+                }
+                
+                // Check for general container question
+                if (normalizedText.includes('מכולה') || normalizedText.includes('פסולת') || 
+                    normalizedText.includes('בניין') || normalizedText.includes('שיפוץ')) {
+                    handleGeneralContainerQuestion();
+                    return;
+                }
+            }
+            
+            // Default response
+            addBotMessage(userGender === 'female' ? 
+                `${userName}, אני לא בטוח שהבנתי בדיוק למה את מתכוונת. אולי את יכולה לפרט?` :
+                `${userName}, אני לא בטוח שהבנתי בדיוק למה אתה מתכוון. אולי אתה יכול לפרט?`);
+            
+            // Show quick actions to help
+            setTimeout(() => {
+                addQuickActions([
+                    '<div class="quick-action placement-action"><i class="fas fa-truck-loading"></i> הצבת מכולה</div>',
+                    '<div class="quick-action replacement-action"><i class="fas fa-exchange-alt"></i> החלפת מכולה</div>',
+                    '<div class="quick-action removal-action"><i class="fas fa-trash-restore"></i> הוצאת מכולה</div>',
+                    '<div class="quick-action"><i class="fas fa-ruler-combined"></i> גדלי מכולות</div>',
+                    '<div class="quick-action"><i class="fas fa-question-circle"></i> שאלות נפוצות</div>'
+                ]);
+            }, 500);
+        }
+        
+        // Show container 3D model
+        function showContainerModel() {
+            addBotMessage("אני אשמח להציג לך הדמיה תלת מימדית של המכולות שלנו.");
+            
+            setTimeout(() => {
+                // Load the 3D model script
+                const script = document.createElement('script');
+                script.src = '/home/ubuntu/container-3d-model.js';
+                document.body.appendChild(script);
+                
+                // Show the popup after script is loaded
+                script.onload = function() {
+                    document.getElementById('container-model-popup').style.display = 'flex';
+                    // Initialize with 8 cubic meter container by default
+                    switchContainerModel(8);
+                };
+                
+                script.onerror = function() {
+                    addBotMessage("מצטער, לא הצלחתי לטעון את המודל התלת מימדי. אנסה להציג לך את המידות בצורה אחרת.");
+                    handleSizeQuestion();
+                };
+            }, 1000);
+        }
+        
+        // Close container model popup
+        function closeContainerModelPopup() {
+            document.getElementById('container-model-popup').style.display = 'none';
+        }
+        
+        // Switch between container models
+        function switchContainerModel(size) {
+            const viewer = document.getElementById('container-model-viewer');
+            
+            // Clear previous model
+            while (viewer.firstChild) {
+                viewer.removeChild(viewer.firstChild);
+            }
+            
+            // Update button styles
+            if (size === 8) {
+                document.getElementById('model-8kub').className = 'btn btn-primary';
+                document.getElementById('model-16kub').className = 'btn btn-secondary';
+            } else {
+                document.getElementById('model-8kub').className = 'btn btn-secondary';
+                document.getElementById('model-16kub').className = 'btn btn-primary';
+            }
+            
+            // Initialize new model
+            initContainerModel('container-model-viewer', size);
+        }
+        
+        // Handle price question
+        function handlePriceQuestion() {
+            addBotMessage("מחיר הצבת מכולה או החלפת מכולה הוא 1200 ₪ + מע\"מ.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4>מחירון שירותים:</h4>
+                    <ul>
+                        <li><i class="fas fa-truck-loading"></i> הצבת מכולה - 1200 ₪ + מע"מ</li>
+                        <li><i class="fas fa-exchange-alt"></i> החלפת מכולה - 1200 ₪ + מע"מ</li>
+                        <li><i class="fas fa-trash-restore"></i> הוצאת מכולה - כלול במחיר ההצבה</li>
+                    </ul>
+                    <p style="margin-top: 10px;">המחיר זהה עבור מכולות בגודל 8 קוב ו-16 קוב.</p>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("האם תרצה לבצע הזמנה?");
+                    setTimeout(() => {
+                        addQuickActions([
+                            'הזמנה חדשה',
+                            'אילו גדלים של מכולות יש?',
+                            'מה התקנות להצבת מכולה?'
+                        ]);
+                    }, 500);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Handle size question
+        function handleSizeQuestion() {
+            addBotMessage("אנחנו מציעים שני גדלים של מכולות לפינוי פסולת בניין:");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4>גדלי מכולות:</h4>
+                    <div class="order-item">
+                        <span class="label">מכולה 8 קוב:</span>
+                        <span class="value">3.8 מטר אורך, 1.8 מטר רוחב, 1.2 מטר גובה</span>
+                    </div>
+                    <div class="order-item">
+                        <span class="label">מכולה 16 קוב:</span>
+                        <span class="value">4.8 מטר אורך, 2.2 מטר רוחב, 1.5 מטר גובה</span>
+                    </div>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage(`
+                        <h4>המלצות לשימוש:</h4>
+                        <div class="order-item">
+                            <span class="label">מכולה 8 קוב:</span>
+                            <span class="value">מתאימה לשיפוצים קטנים עד בינוניים, פינוי פסולת בניין מדירה</span>
+                        </div>
+                        <div class="order-item">
+                            <span class="label">מכולה 16 קוב:</span>
+                            <span class="value">מתאימה לשיפוצים גדולים, פרויקטי בנייה, הריסות</span>
+                        </div>
+                    `, true);
+                    
+                    setTimeout(() => {
+                        addBotMessage("האם תרצה לבצע הזמנה?");
+                        setTimeout(() => {
+                            addQuickActions([
+                                'הזמנה חדשה',
+                                'מה המחיר להצבת מכולה?',
+                                'מה התקנות להצבת מכולה?'
+                            ]);
+                        }, 500);
+                    }, 1000);
+                }, 2000);
+            }, 1000);
+        }
+        
+        // Handle regulations question
+        function handleRegulationsQuestion() {
+            addBotMessage("הצבת מכולות פסולת בניין כפופה לתקנות עירוניות שונות בהתאם לעיר בה מוצבת המכולה.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4>תקנות כלליות להצבת מכולות:</h4>
+                    <ul>
+                        <li>יש להציב את המכולה במקום שאינו מפריע לתנועה</li>
+                        <li>יש לסמן את המכולה באמצעות מחזירי אור בשעות החשיכה</li>
+                        <li>אין להציב מכולה במרחק הקטן מ-20 מטר מפתח בניין</li>
+                        <li>הצבת מכולה בשטח ציבורי דורשת היתר מהעירייה</li>
+                        <li>יש לכסות את המכולה בסוף יום העבודה</li>
+                    </ul>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("בעת ביצוע הזמנה, תוכל לבחור את העיר שלך ולקבל מידע מפורט על התקנות הספציפיות וקישור לטופס בקשת היתר.");
+                    
+                    setTimeout(() => {
+                        addBotMessage("האם תרצה לבצע הזמנה ולראות את התקנות הספציפיות לעיר שלך?");
+                        setTimeout(() => {
+                            addQuickActions([
+                                'הזמנה חדשה',
+                                'מה המחיר להצבת מכולה?',
+                                'אילו גדלים של מכולות יש?'
+                            ]);
+                        }, 500);
+                    }, 1000);
+                }, 2000);
+            }, 1000);
+        }
+        
+        // Handle container placement question
+        function handleContainerPlacementQuestion() {
+            addBotMessage("הצבת מכולה חדשה באתר עולה 1200 ₪ + מע\"מ.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4 style="color: var(--placement-color);"><i class="fas fa-truck-loading"></i> פרטים על הצבת מכולה:</h4>
+                    <ul>
+                        <li>המחיר כולל הובלה לאתר והצבה במיקום המבוקש</li>
+                        <li>ניתן לבחור בין מכולה בגודל 8 קוב או 16 קוב</li>
+                        <li>הצבה בשטח ציבורי דורשת היתר מהעירייה</li>
+                        <li>משך השימוש הסטנדרטי הוא עד 10 ימים (תלוי בתקנות העירייה)</li>
+                        <li>ח.סבן מספקת שירות מקצועי עם פריסה ארצית של נהגים</li>
+                    </ul>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("האם תרצה לבצע הזמנה להצבת מכולה?");
+                    setTimeout(() => {
+                        addQuickActions([
+                            '<div class="quick-action placement-action"><i class="fas fa-shopping-cart"></i> הזמנה חדשה</div>',
+                            '<div class="quick-action"><i class="fas fa-ruler-combined"></i> אילו גדלים של מכולות יש?</div>',
+                            '<div class="quick-action"><i class="fas fa-clipboard-list"></i> מה התקנות להצבת מכולה?</div>'
+                        ]);
+                    }, 500);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Handle container replacement question
+        function handleContainerReplacementQuestion() {
+            addBotMessage("החלפת מכולה מלאה בריקה עולה 1200 ₪ + מע\"מ.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4 style="color: var(--replacement-color);"><i class="fas fa-exchange-alt"></i> פרטים על החלפת מכולה:</h4>
+                    <ul>
+                        <li>המחיר כולל פינוי המכולה המלאה והצבת מכולה ריקה במקומה</li>
+                        <li>פינוי הפסולת מתבצע לאתר מורשה בהתאם לתקנות</li>
+                        <li>ניתן להחליף בין גדלי מכולות שונים (8 קוב / 16 קוב)</li>
+                        <li>יש להודיע לפחות 24 שעות מראש על הצורך בהחלפה</li>
+                        <li>ח.סבן מטמינה באתרים מורשים בלבד על ידי המשרד לאיכות הסביבה</li>
+                    </ul>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("האם תרצה לבצע הזמנה להחלפת מכולה?");
+                    setTimeout(() => {
+                        addQuickActions([
+                            '<div class="quick-action replacement-action"><i class="fas fa-shopping-cart"></i> הזמנה חדשה</div>',
+                            '<div class="quick-action"><i class="fas fa-ruler-combined"></i> אילו גדלים של מכולות יש?</div>',
+                            '<div class="quick-action"><i class="fas fa-clipboard-list"></i> מה התקנות להצבת מכולה?</div>'
+                        ]);
+                    }, 500);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Handle container removal question
+        function handleContainerRemovalQuestion() {
+            addBotMessage("הוצאת מכולה מהאתר כלולה במחיר ההצבה המקורי.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4 style="color: var(--removal-color);"><i class="fas fa-trash-restore"></i> פרטים על הוצאת מכולה:</h4>
+                    <ul>
+                        <li>פינוי המכולה מתבצע לאתר מורשה בהתאם לתקנות</li>
+                        <li>יש להודיע לפחות 24 שעות מראש על הצורך בהוצאה</li>
+                        <li>יש לוודא גישה חופשית למכולה ביום הפינוי</li>
+                        <li>במקרה של הוצאה ללא הצבה מקורית דרכנו, יתכן ויחול תשלום נפרד</li>
+                        <li>ח.סבן מספקת אישורי הטמנה מאתרים מורשים</li>
+                    </ul>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("האם תרצה לבצע הזמנה להוצאת מכולה?");
+                    setTimeout(() => {
+                        addQuickActions([
+                            '<div class="quick-action removal-action"><i class="fas fa-shopping-cart"></i> הזמנה חדשה</div>',
+                            '<div class="quick-action"><i class="fas fa-ruler-combined"></i> אילו גדלים של מכולות יש?</div>',
+                            '<div class="quick-action"><i class="fas fa-clipboard-list"></i> מה התקנות להצבת מכולה?</div>'
+                        ]);
+                    }, 500);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Handle general container question
+        function handleGeneralContainerQuestion() {
+            addBotMessage("אנחנו מציעים שירותי הצבה, החלפה והוצאה של מכולות פסולת בניין.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4>השירותים שלנו:</h4>
+                    <ul>
+                        <li><i class="fas fa-truck-loading"></i> <strong>הצבת מכולה</strong> - הצבת מכולה חדשה באתר (1200 ₪ + מע"מ)</li>
+                        <li><i class="fas fa-exchange-alt"></i> <strong>החלפת מכולה</strong> - החלפת מכולה מלאה בריקה (1200 ₪ + מע"מ)</li>
+                        <li><i class="fas fa-trash-restore"></i> <strong>הוצאת מכולה</strong> - פינוי מכולה מהאתר (כלול במחיר ההצבה)</li>
+                    </ul>
+                    <p style="margin-top: 10px;">אנו מציעים מכולות בגדלים של 8 קוב ו-16 קוב.</p>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("האם תרצה מידע נוסף על אחד מהשירותים או לבצע הזמנה?");
+                    setTimeout(() => {
+                        addQuickActions([
+                            'הזמנה חדשה',
+                            'אילו גדלים של מכולות יש?',
+                            'מה התקנות להצבת מכולה?'
+                        ]);
+                    }, 500);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Handle disposal certification question
+        function handleDisposalCertificationQuestion() {
+            addBotMessage("ח.סבן מספקת אישורי הטמנה רשמיים (טופס 4) עבור פינוי פסולת בניין.");
+            
+            setTimeout(() => {
+                addBotMessage(`
+                    <h4>אישורי הטמנה (טופס 4):</h4>
+                    <ul>
+                        <li>אנו מטמינים פסולת בניין באתרים מורשים בלבד על ידי המשרד לאיכות הסביבה</li>
+                        <li>כל פינוי מלווה באישור הטמנה רשמי (טופס 4)</li>
+                        <li>האישור נדרש לצורך קבלת היתר אכלוס מהעירייה</li>
+                        <li>ניתן לקבל עותק דיגיטלי של האישור במייל או בוואטסאפ</li>
+                        <li>האישור כולל פרטים על כמות הפסולת, סוגה, ותאריך הפינוי</li>
+                    </ul>
+                `, true);
+                
+                setTimeout(() => {
+                    addBotMessage("האם תרצה לקבל דוגמה של אישור הטמנה או לבצע הזמנה?");
+                    setTimeout(() => {
+                        addQuickActions([
+                            'הזמנה חדשה',
+                            'סניפים ופרטי התקשרות',
+                            'מה התקנות להצבת מכולה?'
+                        ]);
+                    }, 500);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Show FAQ section
+        function showFAQ() {
+            let faqHTML = '<h4>שאלות נפוצות:</h4>';
+            
+            faqDatabase.forEach((item, index) => {
+                faqHTML += `
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            ${item.question}
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            ${item.answer}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Add share buttons
+            faqHTML += `
+                <div style="margin-top: 15px;">
+                    <p>מצא את התשובה שחיפשת? שתף עם חברים:</p>
+                    <div class="share-buttons">
+                        <div class="share-button whatsapp" onclick="shareFAQ('whatsapp')">
+                            WhatsApp <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="share-button facebook" onclick="shareFAQ('facebook')">
+                            Facebook <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="share-button email" onclick="shareFAQ('email')">
+                            Email <i class="fas fa-envelope"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            addBotMessage(faqHTML, false, false, false, true);
+        }
+        
+        // Share FAQ
+        function shareFAQ(platform) {
+            let shareUrl = '';
+            let shareText = 'מצאתי מידע שימושי על פינוי פסולת בניין:';
+            
+            faqDatabase.forEach(item => {
+                shareText += `\n\nשאלה: ${item.question}\nתשובה: ${item.question}`;
+            });
+            
+            shareText += '\n\nלקבלת מידע נוסף, בקרו באתר שלנו: https://www.eco-pinui.co.il';
+            
+            if (platform === 'whatsapp') {
+                shareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+            } else if (platform === 'facebook') {
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://www.eco-pinui.co.il')}&quote=${encodeURIComponent(shareText)}`;
+            } else if (platform === 'email') {
+                shareUrl = `mailto:?subject=מידע על פינוי פסולת בניין&body=${encodeURIComponent(shareText)}`;
+            }
+            
+            window.open(shareUrl, '_blank');
+            
+            addBotMessage("תודה על השיתוף! האם יש עוד משהו שאוכל לעזור לך?");
+        }
+        
+        // Handle order request
+        function handleOrderRequest() {
+            addBotMessage("מצויין! אני אשמח לעזור לך עם הזמנת מכולה לפינוי פסולת בניין.");
+            
+            setTimeout(() => {
+                showOrderForm();
+            }, 1000);
+        }
+        
+        // Show order form
+        function showOrderForm() {
+            document.getElementById('order-form').style.display = 'block';
+            document.getElementById('quick-actions').style.display = 'none';
+            
+            // Reset selected service
+            selectedService = '';
+            document.querySelectorAll('.branch-card').forEach(card => {
+                card.style.borderLeft = 'none';
+            });
+            
+            // Scroll to form
+            setTimeout(() => {
+                document.getElementById('order-form').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+        
+        // Hide order form
+        function hideOrderForm() {
+            document.getElementById('order-form').style.display = 'none';
+            document.getElementById('quick-actions').style.display = 'flex';
+        }
+        
+        // Update rental end date
+        function updateRentalEndDate() {
+            const startDateInput = document.getElementById('container-date');
+            const durationInput = document.getElementById('container-duration');
+            const endDateDisplay = document.getElementById('end-date-display');
+            const rentalPopup = document.getElementById('rental-end-date');
+            
+            if (startDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const duration = parseInt(durationInput.value) || 10;
+                
+                // Calculate end date (start date + duration days)
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + duration);
+                
+                // Format date to DD/MM/YYYY
+                const day = endDate.getDate().toString().padStart(2, '0');
+                const month = (endDate.getMonth() + 1).toString().padStart(2, '0');
+                const year = endDate.getFullYear();
+                
+                // Display end date
+                endDateDisplay.textContent = `${day}/${month}/${year}`;
+                rentalPopup.style.display = 'block';
+                
+                // Add highlight animation
+                endDateDisplay.style.animation = 'none';
+                setTimeout(() => {
+                    endDateDisplay.style.animation = 'popupFadeIn 0.5s ease-out';
+                }, 10);
+                
+                // Show warning if duration exceeds 10 days
+                if (duration > 10) {
+                    endDateDisplay.innerHTML = `<span style="color: #ff6b6b;">${day}/${month}/${year} (חריגה מ-10 ימים!)</span>`;
+                }
+            } else {
+                rentalPopup.style.display = 'none';
+            }
+        }
+        
+        // Submit order
+        function submitOrder() {
+            const name = document.getElementById('order-name').value.trim();
+            const phone = document.getElementById('order-phone').value.trim();
+            const address = document.getElementById('order-address').value.trim();
+            const containerSize = document.getElementById('container-size').value;
+            const containerDate = document.getElementById('container-date').value;
+            const containerDuration = document.getElementById('container-duration').value;
+            const city = document.getElementById('city-select').value;
+            const locationType = document.getElementById('location-type').value;
+            const locationNotes = document.getElementById('location-notes').value.trim();
+            const serviceNotes = document.getElementById('service-notes').value.trim();
+            const phonePrefix = document.getElementById('phone-prefix').value;
+            const sendToPhone = document.getElementById('send-to-phone').value.trim();
+            
+            if (!name || !phone || !address || !containerDate || !selectedService) {
+                addBotMessage("נא למלא את כל השדות הדרושים ולבחור סוג שירות לפני שליחת ההזמנה.");
+                return;
+            }
+            
+            // Validate phone number
+            if (!/^[0-9]{7,15}$/.test(phone)) {
+                addBotMessage("נא להזין מספר טלפון תקין (ללא מקפים או רווחים).");
+                return;
+            }
+            
+            // Store order data
+            orderData = {
+                name,
+                phone: `${phonePrefix}${phone}`,
+                address,
+                containerSize,
+                containerDate,
+                containerDuration,
+                city,
+                locationType,
+                locationNotes,
+                serviceNotes,
+                selectedService
+            };
+            
+            // Hide form
+            hideOrderForm();
+            
+            // Get service type text
+            let serviceTypeText = '';
+            if (selectedService === 'placement') {
+                serviceTypeText = 'הצבת מכולה';
+            } else if (selectedService === 'replacement') {
+                serviceTypeText = 'החלפת מכולה';
+            } else if (selectedService === 'removal') {
+                serviceTypeText = 'הוצאת מכולה';
+            }
+            
+            // Get location type text
+            let locationTypeText = '';
+            if (locationType === 'private') {
+                locationTypeText = 'שטח פרטי';
+            } else if (locationType === 'public') {
+                locationTypeText = 'שטח ציבורי (דורש היתר)';
+            } else if (locationType === 'parking') {
+                locationTypeText = 'חניה ציבורית (דורש היתר)';
+            }
+            
+            // Show order summary
+            const orderSummary = `
+                <h4>סיכום הזמנה:</h4>
+                <div class="order-item">
+                    <span class="label">שם:</span>
+                    <span class="value">${name}</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">טלפון:</span>
+                    <span class="value">${orderData.phone}</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">כתובת:</span>
+                    <span class="value">${address}</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">סוג שירות:</span>
+                    <span class="value">${serviceTypeText}</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">גודל מכולה:</span>
+                    <span class="value">${containerSize} קוב</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">תאריך מבוקש:</span>
+                    <span class="value">${containerDate}</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">משך זמן משוער:</span>
+                    <span class="value">${containerDuration} ימים</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">עיר:</span>
+                    <span class="value">${city ? cityRegulations[city].title.replace('תקנות הצבת מכולות ב', '') : 'לא צוין'}</span>
+                </div>
+                <div class="order-item">
+                    <span class="label">סוג מיקום:</span>
+                    <span class="value">${locationTypeText}</span>
+                </div>
+            `;
+            
+            addBotMessage(orderSummary, true);
+            
+            // Add confirmation buttons
+            setTimeout(() => {
+                const chatMessages = document.getElementById('chat-messages');
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'form-actions';
+                buttonsDiv.style.justifyContent = 'center';
+                buttonsDiv.style.marginTop = '1rem';
+                
+                const confirmButton = document.createElement('button');
+                confirmButton.className = 'btn btn-success';
+                confirmButton.textContent = 'אישור ושילוח';
+                confirmButton.onclick = confirmOrder;
+                
+                const editButton = document.createElement('button');
+                editButton.className = 'btn btn-outline';
+                editButton.textContent = 'ערוך הזמנה';
+                editButton.onclick = function() {
+                    showOrderForm();
+                    // Fill form with existing data
+                    document.getElementById('order-name').value = orderData.name;
+                    document.getElementById('order-phone').value = phone;
+                    document.getElementById('order-address').value = orderData.address;
+                    document.getElementById('container-size').value = orderData.containerSize;
+                    document.getElementById('container-date').value = orderData.containerDate;
+                    document.getElementById('container-duration').value = orderData.containerDuration;
+                    document.getElementById('city-select').value = orderData.city;
+                    document.getElementById('location-type').value = orderData.locationType;
+                    document.getElementById('location-notes').value = orderData.locationNotes;
+                    document.getElementById('service-notes').value = orderData.serviceNotes;
+                    
+                    // Update city regulations
+                    updateCityRegulations();
+                    
+                    // Select service
+                    selectService(orderData.selectedService);
+                };
+                
+                buttonsDiv.appendChild(editButton);
+                buttonsDiv.appendChild(confirmButton);
+                chatMessages.appendChild(buttonsDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 500);
+        }
+        
+        // Confirm order and send via WhatsApp
+        function confirmOrder() {
+            // Get service type text
+            let serviceTypeText = '';
+            if (orderData.selectedService === 'placement') {
+                serviceTypeText = 'הצבת מכולה';
+            } else if (orderData.selectedService === 'replacement') {
+                serviceTypeText = 'החלפת מכולה';
+            } else if (orderData.selectedService === 'removal') {
+                serviceTypeText = 'הוצאת מכולה';
+            }
+            
+            // Get location type text
+            let locationTypeText = '';
+            if (orderData.locationType === 'private') {
+                locationTypeText = 'שטח פרטי';
+            } else if (orderData.locationType === 'public') {
+                locationTypeText = 'שטח ציבורי (דורש היתר)';
+            } else if (orderData.locationType === 'parking') {
+                locationTypeText = 'חניה ציבורית (דורש היתר)';
+            }
+            
+            // Prepare WhatsApp message
+            let whatsappMessage = `הזמנה מכולה חדשה :\n\n`;
+            whatsappMessage += `שם: ${orderData.name}\n`;
+            whatsappMessage += `טלפון: ${orderData.phone}\n`;
+            whatsappMessage += `כתובת: ${orderData.address}\n`;
+            whatsappMessage += `סוג שירות: ${serviceTypeText}\n`;
+            whatsappMessage += `גודל מכולה: ${orderData.containerSize} קוב\n`;
+            whatsappMessage += `תאריך מבוקש: ${orderData.containerDate}\n`;
+            whatsappMessage += `משך זמן משוער: ${orderData.containerDuration} ימים\n`;
+            whatsappMessage += `עיר: ${orderData.city ? cityRegulations[orderData.city].title.replace('תקנות הצבת מכולות ב', '') : 'לא צוין'}\n`;
+            whatsappMessage += `סוג מיקום: ${locationTypeText}\n`;
+            
+            if (orderData.locationNotes) {
+                whatsappMessage += `\nהערות למיקום:\n${orderData.locationNotes}\n`;
+            }
+            
+            if (orderData.serviceNotes) {
+                whatsappMessage += `\nהערות נוספות:\n${orderData.serviceNotes}\n`;
+            }
+            
+            // Encode for URL
+            const encodedMessage = encodeURIComponent(whatsappMessage);
+            
+            // Send to company WhatsApp (using a placeholder number)
+            const companyWhatsappLink = `https://wa.me/972501234567?text=${encodedMessage}`;
+            window.open(companyWhatsappLink, '_blank');
+            
+            // Send copy to customer if number provided
+            const sendToPhone = document.getElementById('send-to-phone').value.trim();
+            if (sendToPhone && /^[0-9]{7,15}$/.test(sendToPhone)) {
+                const prefix = document.getElementById('phone-prefix').value;
+                const customerWhatsappLink = `https://wa.me/${prefix}${sendToPhone}?text=${encodedMessage}`;
+                setTimeout(() => {
+                    window.open(customerWhatsappLink, '_blank');
+                }, 1000);
+            }
+            
+            // Show confirmation
+            addBotMessage("ההזמנה נשלחה בהצלחה! נציג שלנו יצור איתך קשר בקרוב לאישור סופי.");
+            
+            // Add eco-friendly message
+            setTimeout(() => {
+                const randomMotivation = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
+                addBotMessage(randomMotivation, false, true);
+            }, 1500);
+            
+            // Reset order data
+            orderData = {};
+            
+            // Add quick actions
+            setTimeout(() => {
+                addQuickActions([
+                    'הזמנה חדשה',
+                    'סניפים ופרטי התקשרות',
+                    'מה התקנות להצבת מכולה?'
+                ]);
+            }, 2000);
+        }
+        
+        // Show branches information
+        function showBranches() {
+            addBotMessage("להלן פרטי הסניפים שלנו:");
+            
+            setTimeout(() => {
+                let branchesInfo = '<div class="branches">';
+                
+                branches.forEach(branch => {
+                    branchesInfo += `
+                        <div class="branch-card">
+                            <h4><i class="fas fa-store"></i> ${branch.name}</h4>
+                            <p>${branch.address}</p>
+                            <p class="phone"><i class="fas fa-phone"></i> ${branch.phone}</p>
+                            <p>שעות פתיחה: ${branch.hours}</p>
+                        </div>
+                    `;
+                });
+                
+                branchesInfo += '</div>';
+                
+                // Add order department info
+                branchesInfo += `
+                    <div style="margin-top: 1rem;">
+                        <h4>מחלקת הזמנות:</h4>
+                        <p>אימייל: <a href="mailto:orders@eco-pinui.co.il">orders@eco-pinui.co.il</a></p>
+                        <p>אתר: <a href="https://www.eco-pinui.co.il">www.eco-pinui.co.il</a></p>
+                    </div>
+                `;
+                
+                addBotMessage(branchesInfo, true);
+            }, 500);
+        }
+        
+        // Tell a joke
+        function tellJoke() {
+            const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+            addBotMessage(randomJoke, false, false, true);
+            
+            // Add motivation after joke
+            setTimeout(() => {
+                const randomMotivation = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
+                addBotMessage(randomMotivation, false, true);
+            }, 2000);
+        }
+        
+        // Initialize 3D model (placeholder function)
+        function initContainerModel(containerId, size) {
+            // This would be replaced with actual Three.js code
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-cube" style="font-size: 50px; color: #666;"></i>
+                    <p style="margin-top: 10px;">הדמיית תלת מימד של מכולת ${size} קוב</p>
+                    <p style="font-size: 0.8rem; color: #666;">(בגרסה המלאה תוצג הדמיה תלת מימדית אינטראקטיבית)</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
